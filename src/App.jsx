@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import GlobalStyle from "./index.js";
 import Header from "./components/Header";
 import Resume from "./components/Resume";
@@ -31,6 +31,7 @@ const App = () => {
           setTransactionsList(response.data);
         } catch (err) {
           setError("Erro ao buscar transações");
+          console.log(err);
         } finally {
           setLoading(false);
         }
@@ -47,6 +48,7 @@ const App = () => {
           // Criação do usuário
           const response = await axios.post(`${apiUrl}/user`, mockUser);
           const newUserId = response.data.id; // Obtém o ID da resposta
+          console.log(newUserId);
           localStorage.setItem("userId", newUserId);
 
           // Agora busca as transações do novo usuário
@@ -56,6 +58,7 @@ const App = () => {
           setTransactionsList(transactionsResponse.data);
         } catch (err) {
           setError("Erro ao criar ou buscar transações do usuário");
+          console.log(err);
         } finally {
           setLoading(false);
         }
@@ -103,6 +106,7 @@ const App = () => {
       setTransactionsList([...transactionsList, response.data]);
     } catch (err) {
       setError("Erro ao adicionar transação");
+      console.log(err);
     }
   };
 
@@ -116,6 +120,7 @@ const App = () => {
       );
     } catch (err) {
       setError("Erro ao deletar transação");
+      console.log(err);
     }
   };
 
