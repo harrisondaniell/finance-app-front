@@ -3,7 +3,9 @@ import GlobalStyle from "./index.js";
 import Header from "./components/Header";
 import Resume from "./components/Resume";
 import Form from "./components/Form";
+import Grid from "./components/Grid";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
 const App = () => {
   const apiUrl = "https://finance-app-i5ug.onrender.com";
@@ -19,7 +21,9 @@ const App = () => {
   useEffect(() => {
     const fetchTransactions = async () => {
       setLoading(true);
+
       if (userId) {
+        // Se o usuário já existe, busca as transações
         try {
           const response = await axios.get(
             `${apiUrl}/transactions?user_id=${userId}`
@@ -31,18 +35,27 @@ const App = () => {
           setLoading(false);
         }
       } else {
+        // Se o usuário não existe, cria um mock user
         const mockUser = {
           firstName: "Usuário",
           lastName: "Exemplo",
-          email: "usuario999@exemplo.com",
+          email: uuidv4() + "@exemplo.com",
           password: "senha123",
         };
 
         try {
+          // Criação do usuário
           const response = await axios.post(`${apiUrl}/user`, mockUser);
-          localStorage.setItem("userId", response.data.id);
+          const newUserId = response.data.id; // Obtém o ID da resposta
+          localStorage.setItem("userId", newUserId);
+
+          // Agora busca as transações do novo usuário
+          const transactionsResponse = await axios.get(
+            `${apiUrl}/transactions?user_id=${newUserId}`
+          );
+          setTransactionsList(transactionsResponse.data);
         } catch (err) {
-          setError("Erro ao criar usuário");
+          setError("Erro ao criar ou buscar transações do usuário");
         } finally {
           setLoading(false);
         }
@@ -53,36 +66,38 @@ const App = () => {
   }, [userId]);
 
   useEffect(() => {
-    const amountExpense = transactionsList
-      .filter((item) => item.type === "EXPENSE")
-      .map((transaction) => Number(transaction.amount));
+    const calculateTotals = () => {
+      const amountExpense = transactionsList
+        .filter((item) => item.type === "EXPENSE")
+        .map((transaction) => Number(transaction.amount));
 
-    const amountIncome = transactionsList
-      .filter((item) => item.type === "EARNING")
-      .map((transaction) => Number(transaction.amount));
+      const amountIncome = transactionsList
+        .filter((item) => item.type === "EARNING")
+        .map((transaction) => Number(transaction.amount));
 
-    const totalExpense = amountExpense
-      .reduce((acc, cur) => acc + cur, 0)
-      .toFixed(2);
-    const totalIncome = amountIncome
-      .reduce((acc, cur) => acc + cur, 0)
-      .toFixed(2);
+      const totalExpense = amountExpense
+        .reduce((acc, cur) => acc + cur, 0)
+        .toFixed(2);
+      const totalIncome = amountIncome
+        .reduce((acc, cur) => acc + cur, 0)
+        .toFixed(2);
 
-    const total = Math.abs(totalIncome - totalExpense).toFixed(2);
+      const total = Math.abs(totalIncome - totalExpense).toFixed(2);
 
-    setIncome(`R$ ${totalIncome}`);
-    setExpense(`R$ ${totalExpense}`);
-    setTotal(
-      `${Number(totalIncome) < Number(totalExpense) ? "-" : ""}R$ ${total}`
-    );
+      setIncome(`R$ ${totalIncome}`);
+      setExpense(`R$ ${totalExpense}`);
+      setTotal(
+        `${Number(totalIncome) < Number(totalExpense) ? "-" : ""}R$ ${total}`
+      );
+    };
+
+    calculateTotals();
   }, [transactionsList]);
 
   const handleAdd = async (transaction) => {
     try {
-      console.log(transaction);
       const response = await axios.post(`${apiUrl}/transactions`, {
         ...transaction,
-        id: transactionsList.length + "",
         user_id: userId,
       });
       setTransactionsList([...transactionsList, response.data]);
@@ -112,16 +127,7 @@ const App = () => {
       <Header />
       <Resume income={income} expense={expense} total={total} />
       <Form handleAdd={handleAdd} />
-      <ul>
-        {transactionsList.map((transaction) => (
-          <li key={transaction.id}>
-            {transaction.name} - R$ {transaction.amount} - {transaction.date}
-            <button onClick={() => handleDelete(transaction.id)}>
-              Deletar
-            </button>
-          </li>
-        ))}
-      </ul>
+      <Grid itens={transactionsList} setItens={setTransactionsList} />
       <GlobalStyle />
     </>
   );

@@ -22,8 +22,8 @@ const Grid = ({ itens, setItens }) => {
         </C.Tr>
       </C.Thead>
       <C.Tbody>
-        {itens?.map((item, index) => (
-          <GridItem key={index} item={item} onDelete={onDelete} />
+        {itens?.map((item) => (
+          <GridItem key={item.id} item={item} onDelete={onDelete} />
         ))}
       </C.Tbody>
     </C.Table>
